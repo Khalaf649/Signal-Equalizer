@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signal Equalizer</title>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <div id="root">
+      <div class="min-h-screen">
+        <header class="header">
+          <div class="container">
+            <div class="flex-between">
+              <div>
+                <h1 class="header-title">Signal Equalizer</h1>
+                <p class="header-subtitle">
+                  Professional Audio Processing & Analysis
+                </p>
+              </div>
+
+              <div class="header-file-info">
+                <p class="header-file-label">Loaded File:</p>
+                <p class="header-file-name">None</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main class="container">
+          <div class="card">
+            <div class="file-uploader">
+              <div class="file-uploader-icon">📄</div>
+
+              <div class="file-uploader-text">
+                <h3 class="file-uploader-title">Load JSON Configuration</h3>
+                <p class="file-uploader-subtitle">
+                  Upload a JSON file containing signal equalizer settings
+                </p>
+              </div>
+
+              <input
+                type="file"
+                id="jsonFile"
+                accept=".json,application/json"
+                class="file-input"
+                onchange="handleJsonUpload(event)"
+              />
+
+              <button
+                class="btn"
+                onclick="document.getElementById('jsonFile').click()"
+              >
+                ⬆ Choose JSON File
+              </button>
+
+              <p id="fileStatus" class="file-status"></p>
+            </div>
+          </div>
+          <div
+            id="mainApp"
+            style="display: none"
+            class="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            <div class="lg:col-span-2 space-y-6">
+              <canvas id="inputSignalCanvas" class="plot-canvas"></canvas>
+              <canvas id="outputSignalCanvas" class="plot-canvas"></canvas>
+              <canvas id="inputFourierCanvas" class="plot-canvas"></canvas>
+              <canvas id="outputFourierCanvas" class="plot-canvas"></canvas>
+            </div>
+
+            <div class="space-y-4">
+              <div class="control-panel">
+                <label for="modeSelect">Mode:</label>
+                <select id="modeSelect">
+                  <option value="generic">Generic</option>
+                  <option value="musical">Musical</option>
+                  <option value="human_voices">Human Voices</option>
+                  <option value="animal_voices">Animal Voices</option>
+                </select>
+
+                <div id="slidersContainer" class="sliders-container">
+                  <!-- sliders will be rendered dynamically -->
+                </div>
+
+                <button id="addSliderBtn" class="btn small">
+                  + Add Slider
+                </button>
+                <button id="resetBtn" class="btn small secondary">
+                  Reset Amps
+                </button>
+                <button id="applyBtn" class="btn small accent">
+                  Apply Equalizer
+                </button>
+                <button id="saveBtn" class="btn small">Download JSON</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script src="./scripts/controllers/fileController.js"></script>
+  </body>
+</html>
