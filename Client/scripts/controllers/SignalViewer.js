@@ -308,7 +308,7 @@ export class SignalViewer {
       displayModeBar: false,
       staticPlot: false,
       responsive: true,
-      scrollZoom: true, // ❌ turn off plotly zoom
+      scrollZoom: true, 
     };
 
     // Render plot
@@ -320,17 +320,5 @@ export class SignalViewer {
     );
 
     this.updateDuration();
-  }
-
-  // Clean up method to remove event listeners and plots
-  destroy() {
-    if (this.audio) {
-      this.audio.removeEventListener(
-        "timeupdate",
-        this._onAudioTimeUpdate.bind(this)
-      );
-      this.audio.pause();
-    }
-    Plotly.purge(this.plotContainer);
   }
 }

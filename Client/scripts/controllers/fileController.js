@@ -1,6 +1,8 @@
 import { appState } from "../appState.js";
 import { extractSignalFromAudio } from "../utils/extractSignalFromAudio.js";
+import { calcFFT } from "../utils/calcFFT.js";
 import { SignalViewer } from "./SignalViewer.js";
+import { FourierController } from "./FourierController.js"; // <-- IMPORTANT
 
 export async function handleJsonUpload(event) {
   const file = event.target.files[0];
@@ -9,8 +11,8 @@ export async function handleJsonUpload(event) {
   const fileNameDisplay = document.querySelector(".header-file-name");
   const uploaderCard = document.getElementById("uploaderCard");
   const mainApp = document.getElementById("mainApp");
+  const loadingSuspense = document.getElementById("loadingSuspense"); // Add this
 
-  // Validate JSON file
   if (file.type !== "application/json" && !file.name.endsWith(".json")) {
     alert("❌ Please upload a valid JSON file.");
     return;
@@ -20,26 +22,26 @@ export async function handleJsonUpload(event) {
   reader.onload = async function (e) {
     try {
       const jsonData = JSON.parse(e.target.result);
-      console.log(jsonData);
       fileLabel.textContent = "Loaded File:";
       fileNameDisplay.textContent = file.name;
 
-      // Save JSON in state
       appState.originalJson = jsonData;
       appState.renderedJson = JSON.parse(JSON.stringify(jsonData));
 
-      // Hide uploader card
       uploaderCard.style.display = "none";
+      loadingSuspense.style.display = "block"; // Show loading
 
       const mode = appState.mode;
 
-      // 1️⃣ Load input signal
-
+      // 1️⃣ LOAD INPUT SIGNAL
       const input = await extractSignalFromAudio(
         appState.renderedJson.original_signal
       );
-      console.log(input.amplitudes);
-      console.log(input.time);
+
+      // Compute FFT
+      const inputFFT = await calcFFT(input.amplitudes, input.sampleRate);
+
+      // Store & Draw Input Signal
       appState.inputViewer = new SignalViewer({
         containerId: "input-signal-viewer",
         title: "Input Signal",
@@ -49,10 +51,22 @@ export async function handleJsonUpload(event) {
         color: "#666",
       });
 
-      // 2️⃣ Load output signal for current mode
-      const outputPath = jsonData[mode].output_signal;
+      // Store & Draw Input FFT
+      appState.inputFFT = new FourierController({
+        containerId: "input-fft",
+        frequencies: inputFFT.frequencies,
+        magnitudes: inputFFT.magnitudes,
+        title: "Input FFT",
+      });
 
+      // 2️⃣ LOAD OUTPUT SIGNAL (according to mode)
+      const outputPath = jsonData[mode].output_signal;
       const output = await extractSignalFromAudio(outputPath);
+
+      // Compute FFT
+      const outputFFT = await calcFFT(output.amplitudes, input.sampleRate);
+
+      // Store & Draw Output Signal
       appState.outputViewer = new SignalViewer({
         containerId: "output-signal-viewer",
         title: "Output Signal",
@@ -62,10 +76,16 @@ export async function handleJsonUpload(event) {
         color: "#666",
       });
 
-      // // 4️⃣ Show main app
+      // Store & Draw Output FFT
+      appState.outputFFT = new FourierController({
+        containerId: "output-fft",
+        frequencies: outputFFT.frequencies,
+        magnitudes: outputFFT.magnitudes,
+        title: "Output FFT",
+      });
+      console.log(appState);
       mainApp.style.display = "grid";
-
-      console.log("✅ appState populated:", appState);
+      loadingSuspense.style.display = "none";
     } catch (err) {
       console.error("Error parsing JSON or loading audio:", err);
       alert("❌ Failed to load JSON or audio files.");
@@ -76,5 +96,6 @@ export async function handleJsonUpload(event) {
 }
 
 // Attach event listener
-const fileInput = document.getElementById("jsonFile");
-fileInput.addEventListener("change", handleJsonUpload);
+document
+  .getElementById("jsonFile")
+  .addEventListener("change", handleJsonUpload);

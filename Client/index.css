@@ -663,8 +663,19 @@ button {
   justify-content: space-between;
   margin-bottom: var(--spacing-md);
 }
+.fft-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
 
 .signal-viewer-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+.fft-viewer-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-foreground);
@@ -781,6 +792,41 @@ button {
   height: 300px;
   display: block;
 }
+/* Enhanced loading spinner animations */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* For Option 1 - Circular spinner */
+.loading-spinner circle {
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* For Option 2 & 3 - Keep the existing spin animation */
 
 /* Utility Classes */
 .w-full {
