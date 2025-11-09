@@ -46,8 +46,9 @@ export class SignalViewer {
     this.signalDuration = this.container.querySelector(
       ".signal-viewer-duration"
     );
+    this.panSlider = this.container.querySelector(".pan-slider");
 
-    if (this.signalTitle) this.signalTitle.textContent = this.title;
+    this.signalTitle.textContent = this.title;
 
     this.bindControls();
     this.render();
@@ -63,6 +64,14 @@ export class SignalViewer {
   _onAudioTimeUpdate() {
     this.currentTime = this.audio.currentTime;
     this.render();
+  }
+  clampOffset() {
+    const maxOffset = Math.max(0, 1 - 1 / this.zoom);
+    this.offset = Math.min(Math.max(this.offset, 0), maxOffset);
+
+    if (this.panSlider) {
+      this.panSlider.value = this.offset;
+    }
   }
 
   updateDuration() {
@@ -90,6 +99,10 @@ export class SignalViewer {
     this.speedSlider?.addEventListener("input", (e) =>
       this.setSpeed(parseFloat(e.target.value))
     );
+    this.panSlider?.addEventListener("input", (e) => {
+      this.offset = parseFloat(e.target.value); // 0 to 1 (full navigation)
+      this.render();
+    });
   }
 
   togglePlayPause() {
@@ -128,14 +141,16 @@ export class SignalViewer {
   }
 
   zoomIn() {
-    this.zoom = Math.min(this.zoom * 1.5, 10);
-    if (this.zoomLabel) this.zoomLabel.textContent = `${this.zoom.toFixed(2)}x`;
+    this.zoom = Math.min(this.zoom * 1.5, 2000);
+    this.zoomLabel.textContent = `${this.zoom.toFixed(2)}x`;
+    this.clampOffset();
     this.render();
   }
 
   zoomOut() {
-    this.zoom = Math.max(this.zoom / 1.5, 0.5);
-    if (this.zoomLabel) this.zoomLabel.textContent = `${this.zoom.toFixed(2)}x`;
+    this.zoom = Math.max(this.zoom / 1.5, 1);
+    this.zoomLabel.textContent = `${this.zoom.toFixed(2)}x`;
+    this.clampOffset();
     this.render();
   }
 

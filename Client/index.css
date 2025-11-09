@@ -115,6 +115,9 @@ button {
 .speed-slider {
   width: "8rem";
 }
+.pan-slider {
+  width: "8rem";
+}
 
 .flex {
   display: flex;
