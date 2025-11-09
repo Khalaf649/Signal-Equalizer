@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signal Equalizer</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+
+  <body>
+    <div id="root">
+      <div class="min-h-screen">
+        <header class="header">
+          <div class="container">
+            <div class="flex items-center justify-between">
+              <div>
+                <h1 class="header-title">Signal Equalizer</h1>
+                <p class="header-subtitle">
+                  Professional Audio Processing & Analysis
+                </p>
+              </div>
+              <div class="header-file-info">
+                <p class="header-file-label"></p>
+                <p class="header-file-name"></p>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main class="container-main">
+          <div id="mainApp" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+              <div
+                id="input-signal-viewer"
+                class="card card-backdrop-blur signal-viewer"
+              >
+                <div class="signal-viewer-header">
+                  <h3 class="signal-viewer-title"></h3>
+                  <div class="signal-viewer-duration">No Signal</div>
+                </div>
+
+                <div
+                  class="signal-plot-container"
+                  style="width: 100%; height: 300px"
+                ></div>
+
+                <div class="playback-controls">
+                  <div class="playback-controls-group">
+                    <!-- Play / Pause -->
+                    <button class="btn btn-sm btn-default play-btn">▶</button>
+
+                    <!-- Stop -->
+                    <button class="btn btn-secondary btn-sm stop-btn">⏹</button>
+
+                    <!-- Reset -->
+                    <button class="btn btn-secondary btn-sm reset-btn">
+                      ↺
+                    </button>
+
+                    <!-- Mute -->
+                    <button class="btn btn-secondary btn-sm mute-toggle-btn">
+                      🔊
+                    </button>
+                  </div>
+
+                  <div class="playback-controls-slider">
+                    <span class="playback-controls-label speed-label"
+                      >Speed: 1x</span
+                    >
+                    <input
+                      type="range"
+                      min="0.25"
+                      max="2"
+                      step="0.25"
+                      value="1"
+                      class="speed-slider"
+                    />
+                    <span class="playback-controls-label pan-label">Pos</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.001"
+                      value="0"
+                      class="pan-slider"
+                    />
+                  </div>
+
+                  <div class="playback-controls-zoom">
+                    <!-- Zoom Out -->
+                    <button class="btn btn-secondary btn-sm zoom-out">-</button>
+
+                    <span class="playback-controls-zoom-label zoom-label"
+                      >1x</span
+                    >
+
+                    <!-- Zoom In -->
+                    <button class="btn btn-secondary btn-sm zoom-in">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="output-signal-viewer"
+                class="card card-backdrop-blur signal-viewer"
+              >
+                <div class="signal-viewer-header">
+                  <h3 class="signal-viewer-title"></h3>
+                  <div class="signal-viewer-duration">No Signal</div>
+                </div>
+
+                <div
+                  class="signal-plot-container"
+                  style="width: 100%; height: 300px"
+                ></div>
+
+                <div class="playback-controls">
+                  <div class="playback-controls-group">
+                    <!-- Play / Pause -->
+                    <button class="btn btn-sm btn-default play-btn">▶</button>
+
+                    <!-- Stop -->
+                    <button class="btn btn-secondary btn-sm stop-btn">⏹</button>
+
+                    <!-- Reset -->
+                    <button class="btn btn-secondary btn-sm reset-btn">
+                      ↺
+                    </button>
+
+                    <!-- Mute -->
+                    <button class="btn btn-secondary btn-sm mute-toggle-btn">
+                      🔊
+                    </button>
+                  </div>
+
+                  <div class="playback-controls-slider">
+                    <span class="playback-controls-label speed-label"
+                      >Speed: 1x</span
+                    >
+                    <input
+                      type="range"
+                      min="0.25"
+                      max="2"
+                      step="0.25"
+                      value="1"
+                      class="speed-slider"
+                    />
+                    <span class="playback-controls-label pan-label">Pos</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.001"
+                      value="0"
+                      class="pan-slider"
+                    />
+                  </div>
+
+                  <div class="playback-controls-zoom">
+                    <!-- Zoom Out -->
+                    <button class="btn btn-secondary btn-sm zoom-out">-</button>
+
+                    <span class="playback-controls-zoom-label zoom-label"
+                      >1x</span
+                    >
+
+                    <!-- Zoom In -->
+                    <button class="btn btn-secondary btn-sm zoom-in">+</button>
+                  </div>
+                </div>
+              </div>
+              <div id="input-fft" class="card card-backdrop-blur fft-viewer">
+                <div class="fft-viewer-header">
+                  <h3 class="fft-viewer-title">Input FFT</h3>
+                </div>
+
+                <div
+                  class="fft-plot-container"
+                  style="width: 100%; height: 300px"
+                ></div>
+                <div class="playback-controls">
+                  <div class="playback-controls-group">
+                    <!-- Reset -->
+                    <button class="btn btn-secondary btn-sm reset-btn">
+                      ↺
+                    </button>
+                  </div>
+
+                  <div class="playback-controls-slider">
+                    <span class="playback-controls-label pan-label">Pos</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.001"
+                      value="0"
+                      class="pan-slider"
+                    />
+                  </div>
+
+                  <div class="playback-controls-zoom">
+                    <!-- Zoom Out -->
+                    <button class="btn btn-secondary btn-sm zoom-out">-</button>
+
+                    <span class="playback-controls-zoom-label zoom-label"
+                      >1x</span
+                    >
+
+                    <!-- Zoom In -->
+                    <button class="btn btn-secondary btn-sm zoom-in">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="output-fft" class="card card-backdrop-blur fft-viewer">
+                <div class="fft-viewer-header">
+                  <h3 class="fft-viewer-title">Output FFT</h3>
+                </div>
+
+                <div
+                  class="fft-plot-container"
+                  style="width: 100%; height: 300px"
+                ></div>
+
+                <div class="playback-controls">
+                  <div class="playback-controls-group">
+                    <!-- Reset -->
+                    <button class="btn btn-secondary btn-sm reset-btn">
+                      ↺
+                    </button>
+                  </div>
+
+                  <div class="playback-controls-slider">
+                    <span class="playback-controls-label pan-label">Pos</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.001"
+                      value="0"
+                      class="pan-slider"
+                    />
+                  </div>
+
+                  <div class="playback-controls-zoom">
+                    <!-- Zoom Out -->
+                    <button class="btn btn-secondary btn-sm zoom-out">-</button>
+
+                    <span class="playback-controls-zoom-label zoom-label"
+                      >1x</span
+                    >
+
+                    <!-- Zoom In -->
+                    <button class="btn btn-secondary btn-sm zoom-in">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div class="card card-backdrop-blur equalizer-panel">
+                <div class="equalizer-header">
+                  <h2 class="equalizer-title">Equalizer</h2>
+                  <div class="flex items-center gap-2">
+                    <button
+                      id="btnReset"
+                      class="btn btn-secondary btn-sm flex items-center gap-1"
+                    >
+                      <svg
+                        class="icon-sm"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 .49-5"></path>
+                      </svg>
+                      Reset
+                    </button>
+
+                    <button id="btnSave" class="btn btn-default btn-sm">
+                      <svg
+                        class="icon-sm"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+                        />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                      </svg>
+                      Save
+                    </button>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="label">Mode</label>
+                  <select id="modeSelect" class="select-trigger">
+                    <option value="generic">Generic</option>
+                    <option value="musical">Musical Instruments</option>
+                    <option value="animal">Animal Sounds</option>
+                    <option value="voice">Human Voices</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-default btn-lg w-full">
+                Apply Equalizer
+              </button>
+              <div class="card flex items-center justify-between">
+                <label for="show-spectrograms">Show Spectrograms</label>
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    class="switch-input"
+                    id="show-spectrograms"
+                    checked
+                  />
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
