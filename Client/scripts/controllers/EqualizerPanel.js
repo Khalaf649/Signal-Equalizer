@@ -81,6 +81,7 @@ export class EqualizerPanel {
     const path = appState.renderedJson[appState.mode]?.output_signal;
 
     const out = await extractSignalFromAudio(path);
+
     const outFFT = await calcFFT(out.amplitudes, out.sampleRate);
 
     if (!appState.outputViewer) {
@@ -104,10 +105,7 @@ export class EqualizerPanel {
         title: "Output FFT",
       });
     } else {
-      appState.outputFFT.updateData({
-        frequencies: outFFT.frequencies,
-        magnitudes: outFFT.magnitudes,
-      });
+      appState.outputFFT.updateData(outFFT.frequencies, outFFT.magnitudes);
     }
   }
 
@@ -187,8 +185,6 @@ export class EqualizerPanel {
 
       this.controlsContainer.appendChild(sliderEl);
     });
-
-
   }
 
   // =================================================================

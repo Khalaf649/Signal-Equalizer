@@ -14,7 +14,6 @@ export class FourierController {
 
     this.zoom = 1;
     this.offset = 0;
-    this.speed = 1;
 
     // ✅ Create DOM if missing
     this._createViewerElement();
@@ -27,8 +26,6 @@ export class FourierController {
     this.zoomOutBtn = this.container.querySelector(".zoom-out");
     this.zoomLabel = this.container.querySelector(".zoom-label");
     this.panSlider = this.container.querySelector(".pan-slider");
-    this.speedSlider = this.container.querySelector(".speed-slider");
-    this.speedLabel = this.container.querySelector(".speed-label");
     this.fftTitle = this.container.querySelector(".fft-viewer-title");
 
     if (this.fftTitle) this.fftTitle.textContent = this.title;
@@ -77,7 +74,7 @@ export class FourierController {
   }
 
   _initSliders() {
-    [this.panSlider, this.speedSlider].filter(Boolean).forEach((slider) => {
+    [this.panSlider].filter(Boolean).forEach((slider) => {
       this._styleSliderTrack(slider);
       slider.addEventListener("input", () => this._styleSliderTrack(slider));
     });
@@ -109,24 +106,14 @@ export class FourierController {
       this._styleSliderTrack(this.panSlider);
       this.render();
     });
-    this.speedSlider?.addEventListener("input", (e) => {
-      this.speed = parseFloat(e.target.value);
-      if (this.speedLabel)
-        this.speedLabel.textContent = `Speed: ${this.speed.toFixed(2)}x`;
-      this._styleSliderTrack(this.speedSlider);
-    });
   }
 
   reset() {
     this.zoom = 1;
     this.offset = 0;
-    this.speed = 1;
     if (this.panSlider) this.panSlider.value = 0;
-    if (this.speedSlider) this.speedSlider.value = 1;
     if (this.zoomLabel) this.zoomLabel.textContent = "1x";
-    if (this.speedLabel) this.speedLabel.textContent = "Speed: 1x";
     this._styleSliderTrack(this.panSlider);
-    this._styleSliderTrack(this.speedSlider);
     this.render();
   }
 
@@ -211,21 +198,17 @@ export class FourierController {
     Plotly.react(this.plotContainer, [trace], layout, config);
   }
 
-  updateData(frequencies = [], magnitudes = []) {
+  updateData(frequencies, magnitudes) {
     // Update data safely
-    this.frequencies = Array.isArray(frequencies) ? frequencies : [];
-    this.magnitudes = Array.isArray(magnitudes) ? magnitudes : [];
+    this.frequencies = frequencies;
+    this.magnitudes = magnitudes;
     this.offset = 0;
     this.zoom = 1;
-    this.speed = 1;
 
     if (this.panSlider) this.panSlider.value = 0;
-    if (this.speedSlider) this.speedSlider.value = 1;
     if (this.zoomLabel) this.zoomLabel.textContent = "1x";
-    if (this.speedLabel) this.speedLabel.textContent = "Speed: 1x";
 
     this._styleSliderTrack(this.panSlider);
-    this._styleSliderTrack(this.speedSlider);
 
     this.render();
   }

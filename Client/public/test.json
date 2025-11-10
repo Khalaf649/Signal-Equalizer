@@ -10,7 +10,7 @@
       { "name": "Presence", "low": 4000, "high": 6000, "value": 1 },
       { "name": "Brilliance", "low": 6000, "high": 20000, "value": 1 }
     ],
-    "output_signal": "public/WhatsApp Audio 2025-11-09 at 01.16.35_e84e08c3.mp3"
+    "output_signal": "public/manga.mp3"
   },
   "musical": {
     "sliders": [
@@ -22,7 +22,7 @@
       { "name": "Vocals", "low": 4000, "high": 6000, "value": 1.1 },
       { "name": "Cymbals / Highs", "low": 6000, "high": 20000, "value": 1.1 }
     ],
-    "output_signal": ""
+    "output_signal": "public/manga.mp3"
   },
   "human_voices": {
     "sliders": [
@@ -34,7 +34,7 @@
       { "name": "Speech Presence", "low": 4000, "high": 6000, "value": 1.2 },
       { "name": "Air / Clarity", "low": 6000, "high": 20000, "value": 1 }
     ],
-    "output_signal": ""
+    "output_signal": "public/manga.mp3"
   },
   "animal_voices": {
     "sliders": [
@@ -46,6 +46,6 @@
       { "name": "Elephant Trumpet", "low": 4000, "high": 6000, "value": 1.4 },
       { "name": "High-pitch Whistle", "low": 6000, "high": 20000, "value": 1.2 }
     ],
-    "output_signal": ""
+    "output_signal": "public/manga.mp3"
   }
 }

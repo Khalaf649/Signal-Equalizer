@@ -3,6 +3,8 @@ export const appState = {
   outputViewer: null,
   inputFFT: null,
   outputFFT: null,
+  inputSpectogram: null,
+  outputSpectogram: null,
   mode: "",
   originalJson: null,
   renderedJson: null,
