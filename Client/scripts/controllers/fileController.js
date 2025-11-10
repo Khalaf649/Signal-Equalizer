@@ -1,101 +1,79 @@
+// src/fileUploader.js
 import { appState } from "../appState.js";
-import { extractSignalFromAudio } from "../utils/extractSignalFromAudio.js";
-import { calcFFT } from "../utils/calcFFT.js";
-import { SignalViewer } from "./SignalViewer.js";
-import { FourierController } from "./FourierController.js"; // <-- IMPORTANT
+import { EqualizerPanel } from "./EqualizerPanel.js";
 
+/**
+ * Global instance – only one panel ever exists
+ */
+let equalizerPanel = null;
+
+/**
+ * Handles JSON file upload
+ * - Parses JSON
+ * - Populates appState (originalJson, renderedJson)
+ * - Sets default mode from JSON (first non-original_signal key)
+ * - Creates EqualizerPanel (once)
+ * - Shows/hides UI
+ * - DOES NOT modify #modeSelect – options are hard-coded in HTML
+ */
 export async function handleJsonUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
+
   const fileLabel = document.querySelector(".header-file-label");
   const fileNameDisplay = document.querySelector(".header-file-name");
   const uploaderCard = document.getElementById("uploaderCard");
   const mainApp = document.getElementById("mainApp");
-  const loadingSuspense = document.getElementById("loadingSuspense"); // Add this
+  const loadingSuspense = document.getElementById("loadingSuspense");
 
+  // Validate file
   if (file.type !== "application/json" && !file.name.endsWith(".json")) {
-    alert("❌ Please upload a valid JSON file.");
+    alert("Please upload a valid JSON file.");
     return;
   }
 
   const reader = new FileReader();
+
   reader.onload = async function (e) {
     try {
-      const jsonData = JSON.parse(e.target.result);
+      // === Update UI ===
       fileLabel.textContent = "Loaded File:";
       fileNameDisplay.textContent = file.name;
-
-      appState.originalJson = jsonData;
-      appState.renderedJson = JSON.parse(JSON.stringify(jsonData));
-
       uploaderCard.style.display = "none";
-      loadingSuspense.style.display = "block"; // Show loading
+      loadingSuspense.style.display = "block";
 
-      const mode = appState.mode;
+      const jsonData = JSON.parse(e.target.result);
 
-      // 1️⃣ LOAD INPUT SIGNAL
-      const input = await extractSignalFromAudio(
-        appState.renderedJson.original_signal
-      );
+      // === Populate appState ===
+      appState.originalJson = jsonData;
+      appState.renderedJson = structuredClone(jsonData);
 
-      // Compute FFT
-      const inputFFT = await calcFFT(input.amplitudes, input.sampleRate);
+      appState.mode = "generic";
+      appState.bands = []; // will be filled by EqualizerPanel
 
-      // Store & Draw Input Signal
-      appState.inputViewer = new SignalViewer({
-        containerId: "input-signal-viewer",
-        title: "Input Signal",
-        samples: input.amplitudes,
-        sampleRate: input.sampleRate,
-        audioSrc: appState.renderedJson.original_signal,
-        color: "#666",
-      });
+      equalizerPanel = await new EqualizerPanel("control-panel");
 
-      // Store & Draw Input FFT
-      appState.inputFFT = new FourierController({
-        containerId: "input-fft",
-        frequencies: inputFFT.frequencies,
-        magnitudes: inputFFT.magnitudes,
-        title: "Input FFT",
-      });
-
-      // 2️⃣ LOAD OUTPUT SIGNAL (according to mode)
-      const outputPath = jsonData[mode].output_signal;
-      const output = await extractSignalFromAudio(outputPath);
-
-      // Compute FFT
-      const outputFFT = await calcFFT(output.amplitudes, input.sampleRate);
-
-      // Store & Draw Output Signal
-      appState.outputViewer = new SignalViewer({
-        containerId: "output-signal-viewer",
-        title: "Output Signal",
-        samples: output.amplitudes,
-        sampleRate: input.sampleRate,
-        audioSrc: outputPath,
-        color: "#666",
-      });
-
-      // Store & Draw Output FFT
-      appState.outputFFT = new FourierController({
-        containerId: "output-fft",
-        frequencies: outputFFT.frequencies,
-        magnitudes: outputFFT.magnitudes,
-        title: "Output FFT",
-      });
-      console.log(appState);
+      // === Show main app ===
       mainApp.style.display = "grid";
       loadingSuspense.style.display = "none";
+
+      console.log("JSON loaded. Mode:", appState);
     } catch (err) {
-      console.error("Error parsing JSON or loading audio:", err);
-      alert("❌ Failed to load JSON or audio files.");
+      console.error("Upload error:", err);
+      alert("Failed to load JSON. " + (err.message || ""));
+      loadingSuspense.style.display = "none";
+      uploaderCard.style.display = "block";
     }
+  };
+
+  reader.onerror = () => {
+    alert("Failed to read file.");
   };
 
   reader.readAsText(file);
 }
 
-// Attach event listener
+// Attach listener
 document
   .getElementById("jsonFile")
   .addEventListener("change", handleJsonUpload);

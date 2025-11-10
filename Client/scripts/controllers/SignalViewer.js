@@ -56,6 +56,7 @@ export class SignalViewer {
     };
 
     this.bindControls();
+    this._initSliders(); // ✅ initialize slider fill
     this.render();
 
     if (this.audio) {
@@ -65,6 +66,24 @@ export class SignalViewer {
       );
     }
   }
+
+  /* -------------------------- Slider Fill Styling -------------------------- */
+  _initSliders() {
+    const sliders = [this.speedSlider, this.panSlider].filter(Boolean);
+    sliders.forEach((slider) => {
+      this._styleSliderTrack(slider);
+      slider.addEventListener("input", () => this._styleSliderTrack(slider));
+    });
+  }
+
+  _styleSliderTrack(slider) {
+    const min = parseFloat(slider.min || 0);
+    const max = parseFloat(slider.max || 1);
+    const val = parseFloat(slider.value || 0);
+    const percent = ((val - min) / (max - min)) * 100;
+    slider.style.background = `linear-gradient(to right, #1fd5f9 0%, #1fd5f9 ${percent}%, #a0a0a0 ${percent}%, #a0a0a0 100%)`;
+  }
+  /* ----------------------------------------------------------------------- */
 
   _onAudioTimeUpdate() {
     this.currentTime = this.audio.currentTime;
@@ -77,6 +96,7 @@ export class SignalViewer {
 
     if (this.panSlider) {
       this.panSlider.value = this.offset;
+      this._styleSliderTrack(this.panSlider); // ✅ update fill when panning
     }
   }
 
@@ -102,12 +122,16 @@ export class SignalViewer {
     this.muteBtn?.addEventListener("click", () => this.toggleMute());
     this.zoomInBtn?.addEventListener("click", () => this.zoomIn());
     this.zoomOutBtn?.addEventListener("click", () => this.zoomOut());
-    this.speedSlider?.addEventListener("input", (e) =>
-      this.setSpeed(parseFloat(e.target.value))
-    );
+
+    this.speedSlider?.addEventListener("input", (e) => {
+      this.setSpeed(parseFloat(e.target.value));
+      this._styleSliderTrack(this.speedSlider);
+    });
+
     this.panSlider?.addEventListener("input", (e) => {
       this.offset = parseFloat(e.target.value);
       this.render();
+      this._styleSliderTrack(this.panSlider);
     });
   }
 
@@ -167,9 +191,9 @@ export class SignalViewer {
       this.speedLabel.textContent = `Speed: ${value.toFixed(2)}x`;
   }
 
-  updateData(samples, time = null, audioSrc = null) {
+  updateData(samples, audioSrc = null) {
     this.samples = samples;
-    this.time = time || this.samples.map((_, i) => i / this.sampleRate);
+    this.time = this.samples.map((_, i) => i / this.sampleRate);
     this.currentTime = 0;
 
     if (audioSrc) {
@@ -198,8 +222,7 @@ export class SignalViewer {
     );
     const endSample = Math.min(startSample + visibleSamplesCount, totalSamples);
 
-    // Downsample for better performance with large datasets
-    const maxPoints = 2000; // Maximum points to display for performance
+    const maxPoints = 2000;
     const step = Math.ceil((endSample - startSample) / maxPoints);
 
     const visibleTime = [];
@@ -219,17 +242,12 @@ export class SignalViewer {
     const { visibleTime, visibleSamples } = this.getVisibleData();
     const currentTime = this.currentTime;
 
-    // Create traces for played and unplayed portions
     const playedTrace = {
       x: [],
       y: [],
       type: "scatter",
       mode: "lines",
-      line: {
-        color: "#1FD5F9",
-        width: 2,
-      },
-      name: "Played",
+      line: { color: "#1FD5F9", width: 2 },
       showlegend: false,
     };
 
@@ -238,16 +256,10 @@ export class SignalViewer {
       y: [],
       type: "scatter",
       mode: "lines",
-      line: {
-        color: this.color,
-        width: 2,
-      },
-      name: "Unplayed",
+      line: { color: this.color, width: 2 },
       showlegend: false,
     };
 
-    // Split data into played and unplayed portions
-    let isPlayingSection = true;
     for (let i = 0; i < visibleTime.length; i++) {
       if (visibleTime[i] <= currentTime) {
         playedTrace.x.push(visibleTime[i]);
@@ -260,7 +272,6 @@ export class SignalViewer {
 
     this.plotData = [playedTrace, unplayedTrace];
 
-    // Add progress line
     if (
       currentTime >= visibleTime[0] &&
       currentTime <= visibleTime[visibleTime.length - 1]
@@ -270,33 +281,15 @@ export class SignalViewer {
         y: [Math.min(...visibleSamples), Math.max(...visibleSamples)],
         type: "scatter",
         mode: "lines",
-        line: {
-          color: "#1FD5F9",
-          width: 2,
-          dash: "dash",
-        },
-        name: "Progress",
+        line: { color: "#1FD5F9", width: 2, dash: "dash" },
         showlegend: false,
       };
       this.plotData.push(progressTrace);
     }
 
     this.plotLayout = {
-      title: false,
-      xaxis: {
-        showgrid: false,
-        zeroline: false,
-        showline: true,
-        linewidth: 1,
-        mirror: true,
-      },
-      yaxis: {
-        showgrid: false,
-        zeroline: false,
-        showline: true,
-        linewidth: 1,
-        mirror: true,
-      },
+      xaxis: { showgrid: false, zeroline: false, showline: true },
+      yaxis: { showgrid: false, zeroline: false, showline: true },
       margin: { l: 30, r: 10, t: 0, b: 20 },
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
@@ -304,14 +297,6 @@ export class SignalViewer {
       dragmode: "pan",
     };
 
-    this.plotConfig = {
-      displayModeBar: false,
-      staticPlot: false,
-      responsive: true,
-      scrollZoom: true, 
-    };
-
-    // Render plot
     Plotly.react(
       this.plotContainer,
       this.plotData,
