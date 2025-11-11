@@ -12,9 +12,8 @@ export async function applyEQ() {
   const response = await fetch("http://localhost:8080/applyEqualizer", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ samples, fs, sliders }),
+    body: JSON.stringify({ samples: Array.from(samples), fs, sliders }),
   });
-  console.log(response);
 
   if (!response.ok) {
     const text = await response.text();
@@ -25,6 +24,12 @@ export async function applyEQ() {
     throw new Error(err.error || text || "Failed to apply EQ");
   }
 
+  // ✅ Now we expect samples + frequencies + magnitudes
   const result = await response.json();
-  return result.samples;
+
+  return {
+    samples: result.samples,
+    frequencies: result.frequencies,
+    magnitudes: result.magnitudes,
+  };
 }

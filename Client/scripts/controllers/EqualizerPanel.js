@@ -5,6 +5,7 @@ import { calcFFT } from "../utils/calcFFT.js";
 import { SignalViewer } from "./SignalViewer.js";
 import { FourierController } from "./FourierController.js";
 import { applyEQ } from "../utils/applyEQ.js";
+import { samplesToAudioURL } from "../utils/samplesToWav.js";
 
 export class EqualizerPanel {
   constructor(panelId = "control-panel") {
@@ -88,24 +89,28 @@ export class EqualizerPanel {
         this.applyEqBtn.disabled = true;
         this.applyEqBtn.textContent = "Applying...";
 
-        const modifiedSamples = await applyEQ();
-        console.log(modifiedSamples);
-
-        // Update output viewer
-        if (appState.outputViewer) {
-          appState.outputViewer.updateSamples(
-            modifiedSamples,
-            appState.inputViewer.sampleRate
-          );
-        }
-
-        // Also update FFT if needed
-        const outFFT = await calcFFT(
+        const {
+          samples: modifiedSamples,
+          frequencies,
+          magnitudes,
+        } = await applyEQ();
+        const audioURL = samplesToAudioURL(
           modifiedSamples,
           appState.inputViewer.sampleRate
         );
+
+        // Update output viewer (time domain)
+        if (appState.outputViewer) {
+          appState.outputViewer.updateSamples(
+            modifiedSamples,
+            appState.inputViewer.sampleRate,
+            audioURL
+          );
+        }
+
+        // Update FFT directly, no need to recalc
         if (appState.outputFFT) {
-          appState.outputFFT.updateData(outFFT.frequencies, outFFT.magnitudes);
+          appState.outputFFT.updateData(frequencies, magnitudes);
         }
       } catch (err) {
         console.error("Failed to apply EQ:", err);
