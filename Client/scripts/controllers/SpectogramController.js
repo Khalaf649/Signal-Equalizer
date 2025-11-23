@@ -97,7 +97,7 @@ export class SpectogramController {
     this.panSlider?.addEventListener("input", (e) => {
       this.offset = parseFloat(e.target.value);
       this._styleSliderTrack(this.panSlider);
-      //this.render();
+      this.render();
     });
   }
 
@@ -107,7 +107,7 @@ export class SpectogramController {
     if (this.panSlider) this.panSlider.value = 0;
     if (this.zoomLabel) this.zoomLabel.textContent = "1x";
     this._styleSliderTrack(this.panSlider);
-    //  this.render();
+    this.render();
   }
 
   clampOffset() {
@@ -136,18 +136,12 @@ export class SpectogramController {
     slider.style.background = `linear-gradient(to right, #1FD5F9 0%, #1FD5F9 ${percent}%, #a0a0a0 ${percent}%, #a0a0a0 100%)`;
   }
 
-  updateData(times = [], frequencies = [], magnitudes = [[]]) {
-    this.times = times;
-    this.frequencies = frequencies;
-    this.magnitudes = magnitudes;
-    this.render();
-  }
   getVisibleData() {
     if (!this.magnitudes.length) return { x: [], y: [], z: [] };
 
     const numFrames = this.magnitudes.length;
-    const startIdx = Math.floor(this.offset * (numFrames - 1));
     const visibleFrames = Math.floor(numFrames / this.zoom);
+    const startIdx = Math.floor(this.offset * (numFrames - visibleFrames));
     const endIdx = Math.min(startIdx + visibleFrames, numFrames);
 
     const x = this.times.slice(startIdx, endIdx);

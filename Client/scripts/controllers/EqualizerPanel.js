@@ -1,4 +1,3 @@
-// src/EqualizerPanel.js
 import { appState } from "../appState.js";
 import { extractSignalFromAudio } from "../utils/extractSignalFromAudio.js";
 import { calcFFT } from "../utils/calcFFT.js";

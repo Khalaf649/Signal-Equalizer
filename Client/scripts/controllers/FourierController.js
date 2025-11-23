@@ -36,7 +36,7 @@ export class FourierController {
       throw new Error("Plot container element not found inside container");
 
     // Initialize
-    this._initSliders();
+    this.initSliders();
     this.bindControls();
     this.render();
   }

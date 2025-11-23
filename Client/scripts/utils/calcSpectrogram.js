@@ -21,6 +21,7 @@ export async function calcSpectrogram(signal, fs) {
     const data = await response.json();
 
     // Should contain: x = time, y = frequency, z = magnitudes [freq][time]
+    console.log("Spectrogram data:", data);
     return {
       x: data.x || [],
       y: data.y || [],

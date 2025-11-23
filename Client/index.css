@@ -834,6 +834,12 @@ button {
 .spectrogram-viewer {
   padding: var(--spacing-md);
 }
+#time-domain {
+  margin-bottom: var(--spacing-lg);
+}
+#frequency-domain {
+  margin-top: var(--spacing-lg);
+}
 
 .fft-title {
   font-size: 0.875rem;
