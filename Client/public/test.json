@@ -1,5 +1,5 @@
 {
-  "original_signal": "public/manga.mp3",
+  "original_signal": "public/synthetic_test_signal22.wav",
   "generic": {
     "sliders": [
       { "name": "Sub Bass", "low": 20, "high": 60, "value": 2 },
@@ -10,7 +10,7 @@
       { "name": "Presence", "low": 4000, "high": 6000, "value": 1 },
       { "name": "Brilliance", "low": 6000, "high": 20000, "value": 1 }
     ],
-    "output_signal": "public/manga.mp3"
+    "output_signal": ""
   },
   "musical": {
     "sliders": [

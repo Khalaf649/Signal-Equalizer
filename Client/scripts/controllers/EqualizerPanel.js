@@ -105,21 +105,26 @@ export class EqualizerPanel {
         } = await applyEQ();
         const filePath = await saveEQToServer(modifiedSamples);
         appState.renderedJson[appState.mode].output_signal = filePath;
-        console.log("Saved output WAV:", filePath);
 
         // Update output viewer (time domain)
-        if (appState.outputViewer) {
-          appState.outputViewer.updateSamples(
-            modifiedSamples,
-            appState.inputViewer.sampleRate,
-            filePath
-          );
-        }
+        appState.outputViewer?.updateSamples(
+          modifiedSamples,
+          appState.inputViewer.sampleRate,
+          filePath
+        );
 
         // Update FFT directly, no need to recalc
-        if (appState.outputFFT) {
-          appState.outputFFT.updateData(frequencies, magnitudes);
-        }
+        appState.outputFFT?.updateData(frequencies, magnitudes);
+        // Update Spectrogram
+        const spectrogram = await calcSpectrogram(
+          modifiedSamples,
+          appState.inputViewer.sampleRate
+        );
+        appState.outputSpectogram?.updateData(
+          spectrogram.x,
+          spectrogram.y,
+          spectrogram.z
+        );
       } catch (err) {
         console.error("Failed to apply EQ:", err);
         alert(err.message);
@@ -241,6 +246,7 @@ export class EqualizerPanel {
       appState.outputFFT.updateData(outFFT.frequencies, outFFT.magnitudes);
     }
     if (!appState.outputSpectogram) {
+      console.log("Creating output spectrogram");
       appState.outputSpectogram = new SpectogramController({
         containerId: "output-spectrogram",
         title: "Output Spectrogram",
@@ -249,6 +255,7 @@ export class EqualizerPanel {
         magnitudes: outSpectrogram.z,
       });
     } else {
+      console.log("Updating output spectrogram");
       appState.outputSpectogram.updateData(
         outSpectrogram.x,
         outSpectrogram.y,
