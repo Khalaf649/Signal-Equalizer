@@ -42,6 +42,14 @@ export class SpectogramController {
       throw new Error("Plot container element not found inside container");
     this._initSliders();
     this.bindControls();
+    // Initial render if data provided
+    if (
+      this.times.length &&
+      this.frequencies.length &&
+      this.magnitudes.length
+    ) {
+      this.render();
+    }
   }
   _createViewerElement() {
     const parent = document.getElementById(this.parentId);
@@ -112,10 +120,11 @@ export class SpectogramController {
     if (this.zoomLabel) this.zoomLabel.textContent = `${this.zoom.toFixed(2)}x`;
   }
   _initSliders() {
-    [this.panSlider].filter(Boolean).forEach((slider) => {
-      this._styleSliderTrack(slider);
-      slider.addEventListener("input", () => this._styleSliderTrack(slider));
-    });
+    const slider = this.panSlider;
+    if (!slider) return;
+
+    this._styleSliderTrack(slider);
+    slider.addEventListener("input", () => this._styleSliderTrack(slider));
   }
 
   _styleSliderTrack(slider) {
@@ -128,9 +137,58 @@ export class SpectogramController {
   }
 
   updateData(times = [], frequencies = [], magnitudes = [[]]) {
-    // this.times = times;
-    // this.frequencies = frequencies;
-    // this.magnitudes = magnitudes;
-    // this.render();
+    this.times = times;
+    this.frequencies = frequencies;
+    this.magnitudes = magnitudes;
+    this.render();
+  }
+  getVisibleData() {
+    if (!this.magnitudes.length) return { x: [], y: [], z: [] };
+
+    const numFrames = this.magnitudes.length;
+    const startIdx = Math.floor(this.offset * (numFrames - 1));
+    const visibleFrames = Math.floor(numFrames / this.zoom);
+    const endIdx = Math.min(startIdx + visibleFrames, numFrames);
+
+    const x = this.times.slice(startIdx, endIdx);
+    const y = this.frequencies;
+    const z = this.frequencies.map((_, fIdx) =>
+      this.magnitudes.slice(startIdx, endIdx).map((frame) => frame[fIdx])
+    );
+
+    return { x, y, z };
+  }
+  render() {
+    if (!this.plotContainer) return;
+
+    const { x, y, z } = this.getVisibleData();
+    if (!x.length || !y.length || !z.length) return;
+
+    Plotly.react(
+      this.plotContainer,
+      [
+        {
+          z,
+          x,
+          y,
+          type: "heatmap",
+          colorscale: "Viridis",
+          showscale: true,
+        },
+      ],
+      {
+        margin: { t: 20, l: 50, r: 20, b: 50 },
+        xaxis: { title: "Time (s)" },
+        yaxis: { title: "Frequency (Hz)" },
+        autosize: true,
+      }
+    );
+  }
+
+  updateData(times = [], frequencies = [], magnitudes = [[]]) {
+    this.times = times;
+    this.frequencies = frequencies;
+    this.magnitudes = magnitudes;
+    this.render();
   }
 }

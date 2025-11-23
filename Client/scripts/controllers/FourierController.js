@@ -73,11 +73,12 @@ export class FourierController {
     parent.appendChild(wrapper);
   }
 
-  _initSliders() {
-    [this.panSlider].filter(Boolean).forEach((slider) => {
-      this._styleSliderTrack(slider);
-      slider.addEventListener("input", () => this._styleSliderTrack(slider));
-    });
+  initSliders() {
+    const slider = this.panSlider;
+    if (!slider) return;
+
+    this._styleSliderTrack(slider);
+    slider.addEventListener("input", () => this._styleSliderTrack(slider));
   }
 
   _styleSliderTrack(slider) {

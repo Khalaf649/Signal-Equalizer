@@ -1,9 +1,11 @@
 #include <iostream>
 #include <vector>
+#include <algorithm> 
 #include <complex>
 #include <cmath>
 #include "httplib.h" // Requires cpp-httplib library (header-only)
 #include "json.hpp"  // Requires nlohmann/json library (header-only)
+using namespace std;
 
 using json = nlohmann::json;
 
@@ -51,7 +53,35 @@ void fft(std::vector<std::complex<double>> &a, bool invert)
         w *= wn;
     }
 }
+void stft(const vector<double>& samples,
+          size_t windowSize,
+          size_t hopSize,
+          vector<vector<double>>& magnitudeFrames)
+{
+    // Hann window
+    vector<double> window(windowSize);
+    for (size_t n = 0; n < windowSize; n++)
+        window[n] = 0.5 - 0.5 * cos(2*PI*n/(windowSize-1));
 
+    size_t nfft =windowSize;
+    vector<complex<double>> fftData(nfft);
+
+    for (size_t start = 0; start + windowSize <= samples.size(); start += hopSize) {
+        // Windowed frame
+        for (size_t i = 0; i < windowSize; i++)
+            fftData[i] = samples[start + i] * window[i];
+
+        // FFT
+        fft(fftData, false);
+
+        // Magnitude (positive frequencies only)
+        vector<double> magFrame(nfft/2 + 1);
+        for (size_t k = 0; k <= nfft/2; k++)
+            magFrame[k] = abs(fftData[k]);
+
+        magnitudeFrames.push_back(magFrame); // [time][omega]
+    }
+}
 // Helper to set CORS headers for a response
 void set_cors(httplib::Response &res)
 {
@@ -89,8 +119,8 @@ int main()
 
             fft(data, false);
 
-            std::vector<double> frequencies(n / 2 + 1);
-            std::vector<double> magnitudes(n / 2 + 1);
+            std::vector<double> frequencies(n/2 + 1);
+            std::vector<double> magnitudes(n/2 + 1);
             for (size_t i = 0; i <= n / 2; ++i) {
                 frequencies[i] = static_cast<double>(i) * fs / n;
                 magnitudes[i] = std::abs(data[i]);
@@ -168,6 +198,50 @@ int main()
         res.status = 400;
         res.set_content("{\"error\": \"Invalid request\"}", "application/json");
     } });
+
+      svr.Post("/spectrogram", [](const httplib::Request& req, httplib::Response& res){
+        set_cors(res);
+        try {
+            auto j = json::parse(req.body);
+            auto samples = j["samples"].get<vector<double>>();
+            double fs = j["fs"].get<double>();
+            size_t windowSize = 256;
+            size_t hopSize = windowSize/2;
+
+            vector<vector<double>> magnitudeFrames;
+            stft(samples, windowSize, hopSize, magnitudeFrames);
+
+            size_t nfft = windowSize;
+            size_t numFreqBins = nfft/2 + 1;
+            size_t numFrames = magnitudeFrames.size();
+
+            // Frequency axis
+            vector<double> y(numFreqBins);
+            for (size_t k = 0; k < numFreqBins; k++)
+                y[k] = k * fs / nfft;
+
+            // Time axis
+            vector<double> x(numFrames);
+            for (size_t t = 0; t < numFrames; t++)
+                x[t] = t * hopSize / fs;
+
+            // Transpose magnitudeFrames [time][freq] -> [freq][time] for Plotly
+            vector<vector<double>> z(numFreqBins, vector<double>(numFrames));
+            for (size_t t = 0; t < numFrames; t++)
+                for (size_t f = 0; f < numFreqBins; f++)
+                    z[f][t] = magnitudeFrames[t][f];
+
+            json response;
+            response["z"] = z;
+            response["x"] = x;
+            response["y"] = y;
+
+            res.set_content(response.dump(), "application/json");
+        } catch (...) {
+            res.status = 400;
+            res.set_content("{\"error\":\"Invalid request\"}", "application/json");
+        }
+    });
 
     std::cout << "Server listening on port 8080..." << std::endl;
     svr.listen("0.0.0.0", 8080);

@@ -8,6 +8,7 @@ import { SpectogramController } from "./SpectogramController.js";
 import { applyEQ } from "../utils/applyEQ.js";
 import { saveEQToServer } from "../utils/saveEQToServer.js";
 import { separateAudio } from "../utils/separateAudio.js";
+import { calcSpectrogram } from "../utils/calcSpectrogram.js";
 
 export class EqualizerPanel {
   constructor(panelId = "control-panel") {
@@ -178,7 +179,10 @@ export class EqualizerPanel {
       appState.renderedJson.original_signal
     );
     const inputFFT = await calcFFT(input.amplitudes, input.sampleRate);
-
+    const inputSpectrogram = await calcSpectrogram(
+      input.amplitudes,
+      input.sampleRate
+    );
     appState.inputViewer = new SignalViewer({
       containerId: "input-signal-viewer",
       title: "Input Signal",
@@ -197,9 +201,9 @@ export class EqualizerPanel {
     appState.inputSpectogram = new SpectogramController({
       containerId: "input-spectrogram",
       title: "Input Spectrogram",
-      // times: inputFFT.times,
-      // frequencies: inputFFT.frequencies,
-      // magnitudes: inputFFT.magnitudes,
+      times: inputSpectrogram.x,
+      frequencies: inputSpectrogram.y,
+      magnitudes: inputSpectrogram.z,
     });
 
     await this._loadPrecomputedOutput();
@@ -209,6 +213,10 @@ export class EqualizerPanel {
     const path = appState.renderedJson[appState.mode]?.output_signal;
     const out = await extractSignalFromAudio(path);
     const outFFT = await calcFFT(out.amplitudes, out.sampleRate);
+    const outSpectrogram = await calcSpectrogram(
+      out.amplitudes,
+      out.sampleRate
+    );
 
     if (!appState.outputViewer) {
       appState.outputViewer = new SignalViewer({
@@ -233,16 +241,20 @@ export class EqualizerPanel {
     } else {
       appState.outputFFT.updateData(outFFT.frequencies, outFFT.magnitudes);
     }
-    if (!appState.outputSpectrogram) {
-      appState.outputSpectrogram = new SpectogramController({
+    if (!appState.outputSpectogram) {
+      appState.outputSpectogram = new SpectogramController({
         containerId: "output-spectrogram",
         title: "Output Spectrogram",
-        // times: outFFT.times,
-        // frequencies: outFFT.frequencies,
-        // magnitudes: outFFT.magnitudes,
+        times: outSpectrogram.x,
+        frequencies: outSpectrogram.y,
+        magnitudes: outSpectrogram.z,
       });
     } else {
-      // appState.outputSpectrogram.updateData(outFFT.times, outFFT.frequencies, outFFT.magnitudes);
+      appState.outputSpectogram.updateData(
+        outSpectrogram.x,
+        outSpectrogram.y,
+        outSpectrogram.z
+      );
     }
   }
 
