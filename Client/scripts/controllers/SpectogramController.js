@@ -139,19 +139,23 @@ export class SpectogramController {
   getVisibleData() {
     if (!this.magnitudes.length) return { x: [], y: [], z: [] };
 
-    const numFrames = this.magnitudes.length;
-    const visibleFrames = Math.floor(numFrames / this.zoom);
-    const startIdx = Math.floor(this.offset * (numFrames - visibleFrames));
-    const endIdx = Math.min(startIdx + visibleFrames, numFrames);
+    const numTimes = this.magnitudes[0].length; // time dimension
+    const visibleFrames = Math.floor(numTimes / this.zoom);
+
+    const startIdx = Math.floor(this.offset * (numTimes - visibleFrames));
+    const endIdx = Math.min(startIdx + visibleFrames, numTimes);
 
     const x = this.times.slice(startIdx, endIdx);
     const y = this.frequencies;
+
+    // z[freq][time] for Plotly
     const z = this.frequencies.map((_, fIdx) =>
-      this.magnitudes.slice(startIdx, endIdx).map((frame) => frame[fIdx])
+      this.magnitudes[fIdx].slice(startIdx, endIdx)
     );
 
     return { x, y, z };
   }
+
   render() {
     if (!this.plotContainer) return;
 

@@ -1,11 +1,13 @@
 # server/main.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
 from pydantic import BaseModel
 import numpy as np
 from scipy.io.wavfile import write
 import os
 import requests  # <-- make sure to import this
+import httpx
 from demucs import pretrained
 from demucs.apply import apply_model
 import torch
@@ -83,53 +85,49 @@ class AudioRequest(BaseModel):
     samples: list[float]  # Mono audio
     fs: float              # Sampling rate
 
+model = pretrained.get_model('htdemucs_6s')
+model.eval()
 
+# Define stems and their indices in the Demucs output
+stems = ['drums', 'vocals', 'violin', 'bass_guiter']
+stem_indices = [0, 2, 3, 5]
+
+# URL of your C++ FFT server
+FFT_SERVER_URL = "http://localhost:8080/calculatefft"  # replace with your server URL
 @app.post("/separate_audio")
-def separate_audio(req: AudioRequest):
+async def separate_audio(audio: AudioRequest):
     try:
-        # Load Demucs model
-        model = pretrained.get_model('htdemucs_6s')
-        model.eval()
+        samples = np.array(audio.samples, dtype=np.float32)
+        sr = audio.fs
         
-        # Convert input to NumPy array
-        audio = np.array(req.samples, dtype=np.float32)
+        if samples.ndim == 1:
+            samples = np.stack([samples, samples], axis=1)
         
-        # Make stereo if necessary
-        if audio.ndim == 1:
-            audio = np.stack([audio, audio], axis=1)
-        
-        # Normalize
-        audio = audio / np.max(np.abs(audio))
-        
-        # Convert to tensor [channels, samples]
-        audio_tensor = torch.from_numpy(audio.T).float()
+        samples = samples / np.max(np.abs(samples))
+        audio_tensor = torch.from_numpy(samples.T).float()
         
         # Separate stems
         with torch.no_grad():
             sources = apply_model(model, audio_tensor.unsqueeze(0), device='cpu')[0]
         
-        # Define stems and their indices
-        stems = ['drums', 'vocals', 'violin', 'bass_guitar']
-        stem_indices = [0, 2, 3, 5]
+        result = {}
         
-        result = []
-        for idx, name in zip(stem_indices, stems):
-            # Convert to mono
-            mono_audio = sources[idx].mean(dim=0).numpy()
-            
-            # Call your existing FFT method
-            fft_data = calculate_fft(FFTRequest(samples=mono_audio.tolist(), fs=req.fs))
-            
-            # Find dominant frequency (peak)
-            magnitudes = np.array(fft_data["magnitudes"])
-            frequencies = np.array(fft_data["frequencies"])
-            peak_idx = np.argmax(magnitudes)
-            dominant_freq = float(frequencies[peak_idx])
-            
-            result.append({
-                "stem": name,
-                "dominantFrequency": dominant_freq
-            })
+        async with httpx.AsyncClient() as client:
+            for idx, name in zip(stem_indices, stems):
+                mono_audio = sources[idx].mean(dim=0).numpy()
+                
+                fft_payload = {"samples": mono_audio.tolist(), "fs": sr}
+                response = await client.post(FFT_SERVER_URL, json=fft_payload)
+                
+                if response.status_code == 200:
+                    fft_data = response.json()
+                    frequencies = np.array(fft_data.get("frequencies", []))
+                    magnitudes = np.array(fft_data.get("magnitudes", []))
+                    peak_freq = float(frequencies[np.argmax(magnitudes)]) if len(frequencies) > 0 else None
+                else:
+                    peak_freq = None
+                
+                result[name] = peak_freq
         
         return result
 

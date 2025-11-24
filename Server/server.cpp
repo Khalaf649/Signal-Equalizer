@@ -61,27 +61,38 @@ void stft(const vector<double>& samples,
     // Hann window
     vector<double> window(windowSize);
     for (size_t n = 0; n < windowSize; n++)
-        window[n] = 0.5 - 0.5 * cos(2*PI*n/(windowSize-1));
+        window[n] = 0.5 - 0.5 * cos(2 * PI * n / (windowSize - 1));
 
-    size_t nfft =windowSize;
+    size_t nfft = windowSize;
     vector<complex<double>> fftData(nfft);
 
-    for (size_t start = 0; start + windowSize <= samples.size(); start += hopSize) {
-        // Windowed frame
-        for (size_t i = 0; i < windowSize; i++)
-            fftData[i] = samples[start + i] * window[i];
+    // Loop over frames (include the last partial one)
+    for (size_t start = 0; start < samples.size(); start += hopSize)
+    {
+        // Reset FFT buffer
+        std::fill(fftData.begin(), fftData.end(), 0.0);
 
-        // FFT
+        // Zero-pad last frame if shorter than windowSize
+        size_t remain = samples.size() - start;
+        for (size_t i = 0; i < windowSize; i++) {
+            if (i < remain)
+                fftData[i] = samples[start + i] * window[i];
+            else
+                fftData[i] = 0.0;
+        }
+
+        // Run FFT
         fft(fftData, false);
 
         // Magnitude (positive frequencies only)
-        vector<double> magFrame(nfft/2 + 1);
-        for (size_t k = 0; k <= nfft/2; k++)
-            magFrame[k] = abs(fftData[k]);
+        vector<double> magFrame(nfft / 2 + 1);
+        for (size_t k = 0; k <= nfft / 2; k++)
+            magFrame[k] = std::abs(fftData[k]);
 
-        magnitudeFrames.push_back(magFrame); // [time][omega]
+        magnitudeFrames.push_back(magFrame);
     }
 }
+
 // Helper to set CORS headers for a response
 void set_cors(httplib::Response &res)
 {
@@ -205,8 +216,8 @@ int main()
             auto j = json::parse(req.body);
             auto samples = j["samples"].get<vector<double>>();
             double fs = j["fs"].get<double>();
-            size_t windowSize = 256;
-            size_t hopSize = windowSize/2;
+            size_t windowSize = 2048;
+            size_t hopSize = windowSize/4;
 
             vector<vector<double>> magnitudeFrames;
             stft(samples, windowSize, hopSize, magnitudeFrames);

@@ -246,7 +246,6 @@ export class EqualizerPanel {
       appState.outputFFT.updateData(outFFT.frequencies, outFFT.magnitudes);
     }
     if (!appState.outputSpectogram) {
-      console.log("Creating output spectrogram");
       appState.outputSpectogram = new SpectogramController({
         containerId: "output-spectrogram",
         title: "Output Spectrogram",
@@ -255,7 +254,6 @@ export class EqualizerPanel {
         magnitudes: outSpectrogram.z,
       });
     } else {
-      console.log("Updating output spectrogram");
       appState.outputSpectogram.updateData(
         outSpectrogram.x,
         outSpectrogram.y,
@@ -272,14 +270,10 @@ export class EqualizerPanel {
     const sliders = modeData?.sliders || [];
     if (appState.mode === "music_model") {
       try {
-        const samples = appState.currentSamples; // your audio samples array
-        const fs = appState.fs; // sample rate
-
         const data = await separateAudio(
           appState.inputViewer.samples,
           appState.inputViewer.sampleRate
         );
-        console.log(data);
 
         // Map API response to sliders
         sliders = data.map((d) => ({

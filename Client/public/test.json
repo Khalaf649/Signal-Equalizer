@@ -1,5 +1,5 @@
 {
-  "original_signal": "public/synthetic_test_signal22.wav",
+  "original_signal": "public/synthetic_signal.wav",
   "generic": {
     "sliders": [
       { "name": "Sub Bass", "low": 20, "high": 60, "value": 2 },
@@ -14,10 +14,10 @@
   },
   "musical": {
     "sliders": [
-      { "name": "bass", "low": 20, "high": 400, "value": 1 },
-      { "name": "HIGH note", "low": 700, "high": 2000, "value": 1 },
-      { "name": "drums", "low": 2000, "high": 6000, "value": 1 },
-      { "name": "violin", "low": 6000, "high": 10000, "value": 1 }
+      { "name": "drums", "low": 47, "high": 87, "value": 1 },
+      { "name": "vocals", "low": 815, "high": 855, "value": 1 },
+      { "name": "violin", "low": 560, "high": 600, "value": 1 },
+      { "name": "bass_guitar", "low": 257, "high": 297, "value": 1 }
     ],
     "output_signal": ""
   },

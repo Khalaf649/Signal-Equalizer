@@ -10,6 +10,7 @@ export async function separateAudio(samples, fs) {
         fs: fs,
       }),
     });
+    console.log(response);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -17,6 +18,7 @@ export async function separateAudio(samples, fs) {
     }
 
     const result = await response.json();
+    console.log("Received separation result:", result);
     // result is an array of objects: [{ stem: 'vocals', dominantFrequency: 440 }, ...]
     return result;
   } catch (err) {
