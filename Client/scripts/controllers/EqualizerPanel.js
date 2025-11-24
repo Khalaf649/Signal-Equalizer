@@ -32,7 +32,8 @@ export class EqualizerPanel {
       this.maxFreqInput = this.panel.querySelector("#max-freq");
       this.maxFreqValue = this.panel.querySelector("#max-freq-value");
       this.sliderNameInput = this.panel.querySelector("#slider-name");
-      this.applyEqBtn = this.panel.querySelector("#apply-eq-btn");
+      // suspense div shown while applying or switching modes
+      this.applySuspense = this.panel.querySelector("#apply-eq-suspense");
 
       this._styleSliderTrack(this.minFreqInput);
       this._styleSliderTrack(this.maxFreqInput);
@@ -90,49 +91,7 @@ export class EqualizerPanel {
       this.maxFreqValue.textContent = `${this.maxFreqInput.value} Hz`;
       this._styleSliderTrack(this.maxFreqInput);
     });
-    this.applyEqBtn.addEventListener("click", async () => {
-      if (!appState.inputViewer) return;
-
-      try {
-        // Optionally: show loading state
-        this.applyEqBtn.disabled = true;
-        this.applyEqBtn.textContent = "Applying...";
-
-        const {
-          samples: modifiedSamples,
-          frequencies,
-          magnitudes,
-        } = await applyEQ();
-        const filePath = await saveEQToServer(modifiedSamples);
-        appState.renderedJson[appState.mode].output_signal = filePath;
-
-        // Update output viewer (time domain)
-        appState.outputViewer?.updateSamples(
-          modifiedSamples,
-          appState.inputViewer.sampleRate,
-          filePath
-        );
-
-        // Update FFT directly, no need to recalc
-        appState.outputFFT?.updateData(frequencies, magnitudes);
-        // Update Spectrogram
-        const spectrogram = await calcSpectrogram(
-          modifiedSamples,
-          appState.inputViewer.sampleRate
-        );
-        appState.outputSpectogram?.updateData(
-          spectrogram.x,
-          spectrogram.y,
-          spectrogram.z
-        );
-      } catch (err) {
-        console.error("Failed to apply EQ:", err);
-        alert(err.message);
-      } finally {
-        this.applyEqBtn.disabled = false;
-        this.applyEqBtn.textContent = "Apply Equalizer";
-      }
-    });
+    // Removed dedicated Apply button. Sliders will trigger apply on 'change'.
   }
 
   openAddSliderDialog() {
@@ -262,6 +221,58 @@ export class EqualizerPanel {
     }
   }
 
+  // Apply EQ and update outputs (used by sliders' 'change' events)
+  async _applyEQAndUpdate() {
+    if (!appState.inputViewer) return;
+    try {
+      // show suspense indicator
+      if (this.applySuspense) this.applySuspense.style.display = "flex";
+      // disable controls while applying
+      if (this.controlsContainer)
+        this.controlsContainer.style.pointerEvents = "none";
+      if (this.saveBtn) this.saveBtn.disabled = true;
+
+      const {
+        samples: modifiedSamples,
+        frequencies,
+        magnitudes,
+      } = await applyEQ();
+
+      const filePath = await saveEQToServer(modifiedSamples);
+      appState.renderedJson[appState.mode].output_signal = filePath;
+
+      // Update output viewer (time domain)
+      appState.outputViewer?.updateSamples(
+        modifiedSamples,
+        appState.inputViewer.sampleRate,
+        filePath
+      );
+
+      // Update FFT
+      appState.outputFFT?.updateData(frequencies, magnitudes);
+
+      // Update Spectrogram
+      const spectrogram = await calcSpectrogram(
+        modifiedSamples,
+        appState.inputViewer.sampleRate
+      );
+      appState.outputSpectogram?.updateData(
+        spectrogram.x,
+        spectrogram.y,
+        spectrogram.z
+      );
+    } catch (err) {
+      console.error("Failed to apply EQ:", err);
+      alert(err.message);
+    } finally {
+      if (this.controlsContainer)
+        this.controlsContainer.style.pointerEvents = "";
+      if (this.saveBtn) this.saveBtn.disabled = false;
+      // hide suspense indicator
+      if (this.applySuspense) this.applySuspense.style.display = "none";
+    }
+  }
+
   // =================================================================
   // 3. Render sliders & sync
   // =================================================================
@@ -343,6 +354,11 @@ export class EqualizerPanel {
         }
       });
 
+      // When the user finishes adjusting (change event), apply EQ and update outputs
+      input.addEventListener("change", async () => {
+        await this._applyEQAndUpdate();
+      });
+
       deleteBtn.addEventListener("click", () => this.removeBand(i));
 
       this.controlsContainer.appendChild(wrapper);
@@ -367,12 +383,9 @@ export class EqualizerPanel {
     appState.mode = modeName;
     appState.inputViewer.reset();
     appState.inputFFT.reset();
+    appState.inputSpectogram.reset();
 
-    const app = document.getElementById("mainApp");
-    const loading = document.getElementById("loadingSuspense");
-
-    if (app) app.style.display = "none";
-    if (loading) loading.style.display = "block";
+    if (this.applySuspense) this.applySuspense.style.display = "flex";
 
     try {
       await this._loadPrecomputedOutput();
@@ -380,8 +393,7 @@ export class EqualizerPanel {
     } catch (err) {
       console.error("Error setting mode:", err);
     } finally {
-      if (app) app.style.display = "grid";
-      if (loading) loading.style.display = "none";
+      if (this.applySuspense) this.applySuspense.style.display = "none";
     }
   }
 

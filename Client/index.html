@@ -207,9 +207,21 @@
 
               </div>
             </div>
-            <button id="apply-eq-btn" class="btn btn-default btn-lg w-full space-y-6">
-              Apply Equalizer
-            </button>
+            <!-- Replaced Apply button with a hidden suspense div (same size) -->
+            <div id="apply-eq-suspense" class="btn btn-default btn-lg w-full space-y-6" style="display: none; align-items: center; justify-content: center;">
+              <svg class="icon-md loading-spinner" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="margin-right: 0.5rem;">
+                <circle cx="12" cy="4" r="2">
+                  <animate attributeName="cy" values="4;12;4" dur="1s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="12" cy="12" r="2">
+                  <animate attributeName="cy" values="12;20;12" dur="1s" repeatCount="indefinite" begin="0.1s" />
+                </circle>
+                <circle cx="12" cy="20" r="2">
+                  <animate attributeName="cy" values="20;12;20" dur="1s" repeatCount="indefinite" begin="0.2s" />
+                </circle>
+              </svg>
+              <span>Processing...</span>
+            </div>
             <div class="card flex items-center justify-between space-y-6">
               <label for="show-spectrograms">Show Spectrograms</label>
               <label class="switch">
