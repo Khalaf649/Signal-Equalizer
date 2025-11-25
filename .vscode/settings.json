@@ -84,5 +84,7 @@
     "ranges": "cpp",
     "span": "cpp",
     "valarray": "cpp"
-  }
+  },
+  "python-envs.defaultEnvManager": "ms-python.python:venv",
+  "python-envs.pythonProjects": []
 }
