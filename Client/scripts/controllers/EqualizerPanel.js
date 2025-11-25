@@ -8,6 +8,7 @@ import { applyEQ } from "../utils/applyEQ.js";
 import { saveEQToServer } from "../utils/saveEQToServer.js";
 import { separateAudio } from "../utils/separateAudio.js";
 import { calcSpectrogram } from "../utils/calcSpectrogram.js";
+import { ApplyAi } from "../utils/ApplyAi.js";
 
 export class EqualizerPanel {
   constructor(panelId = "control-panel") {
@@ -26,6 +27,8 @@ export class EqualizerPanel {
       this.addSliderForm = this.panel.querySelector("#add-slider-form");
       this.showPrecomputedCheckbox =
         this.panel.querySelector("#show-spectrograms");
+      this.aiModeContainer = this.panel.querySelector("#ai-mode-container");
+      this.aiModeToggle = this.panel.querySelector("#ai-mode-toggle");
 
       this.minFreqInput = this.panel.querySelector("#min-freq");
       this.minFreqValue = this.panel.querySelector("#min-freq-value");
@@ -34,6 +37,9 @@ export class EqualizerPanel {
       this.sliderNameInput = this.panel.querySelector("#slider-name");
       // suspense div shown while applying or switching modes
       this.applySuspense = this.panel.querySelector("#apply-eq-suspense");
+
+      // AI mode state
+      this.useAI = true; // Default to AI mode enabled
 
       this._styleSliderTrack(this.minFreqInput);
       this._styleSliderTrack(this.maxFreqInput);
@@ -60,6 +66,12 @@ export class EqualizerPanel {
       const isVisible = this.showPrecomputedCheckbox.checked;
       const spectrogramContainers = document.querySelector("#Spectrograms");
       spectrogramContainers.style.display = isVisible ? "block" : "none";
+    });
+
+    // AI Mode Toggle Handler
+    this.aiModeToggle.addEventListener("change", async () => {
+      this.useAI = this.aiModeToggle.checked;
+      await this.renderSliders();
     });
 
     this.resetBtn.addEventListener("click", () => this.reset());
@@ -113,7 +125,12 @@ export class EqualizerPanel {
     }
 
     const modeData = appState.renderedJson[appState.mode];
-    if (!modeData.sliders) modeData.sliders = [];
+    const isAIMode =
+      (appState.mode === "musical" || appState.mode === "human_voices") &&
+      this.useAI;
+    const sliderArray = isAIMode ? "AI_sliders" : "sliders";
+
+    if (!modeData[sliderArray]) modeData[sliderArray] = [];
 
     const newSlider = {
       name,
@@ -122,7 +139,7 @@ export class EqualizerPanel {
       value: 1, // default
     };
 
-    modeData.sliders.push(newSlider);
+    modeData[sliderArray].push(newSlider);
 
     // Await renderSliders in case it's async (for music_model fetching)
     if (typeof this.renderSliders === "function") {
@@ -232,11 +249,34 @@ export class EqualizerPanel {
         this.controlsContainer.style.pointerEvents = "none";
       if (this.saveBtn) this.saveBtn.disabled = true;
 
-      const {
-        samples: modifiedSamples,
-        frequencies,
-        magnitudes,
-      } = await applyEQ();
+      let modifiedSamples, frequencies, magnitudes;
+
+      // Check if AI mode is enabled for musical or human_voices
+      const isAIMode =
+        (appState.mode === "musical" || appState.mode === "human_voices") &&
+        this.useAI;
+
+      if (isAIMode) {
+        // Call AI API with sliders
+        const modeData = appState.renderedJson[appState.mode];
+        const sliders = modeData?.AI_sliders || [];
+
+        const result = await callAIAPI(
+          appState.inputViewer.samples,
+          appState.inputViewer.sampleRate,
+          sliders
+        );
+
+        modifiedSamples = result.samples;
+        frequencies = result.frequencies;
+        magnitudes = result.magnitudes;
+      } else {
+        // Use normal EQ apply
+        const result = await applyEQ();
+        modifiedSamples = result.samples;
+        frequencies = result.frequencies;
+        magnitudes = result.magnitudes;
+      }
 
       const filePath = await saveEQToServer(modifiedSamples);
       appState.renderedJson[appState.mode].output_signal = filePath;
@@ -278,29 +318,31 @@ export class EqualizerPanel {
   // =================================================================
   async renderSliders() {
     const modeData = appState.renderedJson[appState.mode];
-    const sliders = modeData?.sliders || [];
-    if (appState.mode === "music_model") {
-      try {
-        const data = await separateAudio(
-          appState.inputViewer.samples,
-          appState.inputViewer.sampleRate
-        );
+    let sliders = await this._getSlidersForMode();
 
-        // Map API response to sliders
-        sliders = data.map((d) => ({
-          name: d.stem,
-          low: d.dominantFrequency,
-          high: d.dominantFrequency,
-          value: 1.0, // default multiplier
-        }));
+    this._renderSliderUI(sliders);
+  }
 
-        // Update modeData sliders
-        modeData.sliders = sliders;
-      } catch (err) {
-        console.error("Error fetching /separate_audio:", err);
-      }
-    }
+  /**
+   * Get sliders for the current mode, fetching if necessary
+   */
+  async _getSlidersForMode() {
+    const modeData = appState.renderedJson[appState.mode];
+    const isAIMode =
+      (appState.mode === "musical" || appState.mode === "human_voices") &&
+      this.useAI;
 
+    // Determine which property to use
+    const sliderProperty = isAIMode ? "AI_Sliders" : "sliders";
+    let sliders = modeData?.[sliderProperty] || [];
+
+    return sliders;
+  }
+
+  /**
+   * Render slider UI elements
+   */
+  _renderSliderUI(sliders) {
     this.controlsContainer.innerHTML = sliders.length
       ? ""
       : "<p class='text-gray-500'>No bands defined</p>";
@@ -346,7 +388,15 @@ export class EqualizerPanel {
         this._styleSliderTrack(input);
 
         // sync to appState
-        modeData.sliders[i].value = val;
+        const modeData = appState.renderedJson[appState.mode];
+        const isAIMode =
+          (appState.mode === "musical" || appState.mode === "human_voices") &&
+          this.useAI;
+        const sliderArray = isAIMode ? modeData?.AI_sliders : modeData?.sliders;
+
+        if (sliderArray) {
+          sliderArray[i].value = val;
+        }
 
         // call external function to update design
         if (typeof this.onSliderChange === "function") {
@@ -385,6 +435,12 @@ export class EqualizerPanel {
     appState.inputFFT.reset();
     appState.inputSpectogram.reset();
 
+    // Show/hide AI mode toggle based on mode
+    if (this.aiModeContainer) {
+      this.aiModeContainer.style.display =
+        modeName === "musical" || modeName === "human_voices" ? "flex" : "none";
+    }
+
     if (this.applySuspense) this.applySuspense.style.display = "flex";
 
     try {
@@ -399,9 +455,14 @@ export class EqualizerPanel {
 
   removeBand(index) {
     const modeData = appState.renderedJson[appState.mode];
-    if (!modeData?.sliders) return;
+    const isAIMode =
+      (appState.mode === "musical" || appState.mode === "human_voices") &&
+      this.useAI;
+    const sliderArray = isAIMode ? modeData?.AI_sliders : modeData?.sliders;
 
-    modeData.sliders.splice(index, 1);
+    if (!sliderArray) return;
+
+    sliderArray.splice(index, 1);
     this.renderSliders();
   }
 

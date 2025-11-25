@@ -14,7 +14,13 @@
   },
   "musical": {
     "sliders": [
-      { "name": "drums", "low": 47, "high": 87, "value": 1 },
+      { "name": "guitar", "low": 47, "high": 87, "value": 1 },
+      { "name": "khalaf", "low": 815, "high": 855, "value": 1 },
+      { "name": "violin", "low": 560, "high": 600, "value": 1 },
+      { "name": "bass_guitar", "low": 257, "high": 297, "value": 1 }
+    ],
+    "AI_Sliders": [
+      { "name": "salma", "low": 47, "high": 87, "value": 1 },
       { "name": "vocals", "low": 815, "high": 855, "value": 1 },
       { "name": "violin", "low": 560, "high": 600, "value": 1 },
       { "name": "bass_guitar", "low": 257, "high": 297, "value": 1 }

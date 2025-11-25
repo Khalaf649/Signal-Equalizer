@@ -88,6 +88,23 @@
                     <option value="human_voices">Human Voices</option>
                   </select>
                 </div>
+                <!-- AI Mode Toggle (only visible for musical mode) -->
+                <div
+                  id="ai-mode-container"
+                  class="card flex items-center justify-between space-y-6"
+                  style="display: none"
+                >
+                  <label for="ai-mode-toggle">Use AI Sliders</label>
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      class="switch-input"
+                      id="ai-mode-toggle"
+                      checked
+                    />
+                    <span class="switch-slider"></span>
+                  </label>
+                </div>
                 <!-- Trigger Button -->
                 <button
                   id="open-dialog"
