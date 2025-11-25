@@ -43,11 +43,6 @@ export async function handleJsonUpload(event) {
 
       const jsonData = JSON.parse(e.target.result);
 
-      // ---- Validate required field ----
-      if (!jsonData.original_signal) {
-        throw new Error("JSON must contain 'original_signal' path.");
-      }
-
       // === Populate appState ===
       appState.originalJson = jsonData;
       appState.renderedJson = structuredClone(jsonData);

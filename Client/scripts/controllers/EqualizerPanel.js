@@ -48,8 +48,8 @@ export class EqualizerPanel {
         throw new Error("Required UI elements not found");
 
       this._attachEvents();
-      await this._initViewers();
-      this.renderSliders();
+      await this._updateViewersForMode();
+      await this.renderSliders();
 
       return this;
     })();
@@ -103,7 +103,6 @@ export class EqualizerPanel {
       this.maxFreqValue.textContent = `${this.maxFreqInput.value} Hz`;
       this._styleSliderTrack(this.maxFreqInput);
     });
-    // Removed dedicated Apply button. Sliders will trigger apply on 'change'.
   }
 
   openAddSliderDialog() {
@@ -150,42 +149,69 @@ export class EqualizerPanel {
   }
 
   // =================================================================
-  // 2. Initialize viewers
+  // 2. Viewers: helpers to initialize / update viewers per mode
   // =================================================================
-  async _initViewers() {
+  async _updateViewersForMode() {
     if (!appState.renderedJson) throw new Error("JSON not loaded");
+    const modeName = appState.mode;
 
-    const input = await extractSignalFromAudio(
-      appState.renderedJson.original_signal
-    );
+    const modeData = appState.renderedJson[modeName] || {};
+    // Per-mode input signal path. Fall back to legacy `original_signal` if present.
+    const inputPath =
+      modeData.input_signal || appState.renderedJson.original_signal || null;
+
+    const input = await extractSignalFromAudio(inputPath);
     const inputFFT = await calcFFT(input.amplitudes, input.sampleRate);
     const inputSpectrogram = await calcSpectrogram(
       input.amplitudes,
       input.sampleRate
     );
-    appState.inputViewer = new SignalViewer({
-      containerId: "input-signal-viewer",
-      title: "Input Signal",
-      samples: input.amplitudes,
-      sampleRate: input.sampleRate,
-      audioSrc: appState.renderedJson.original_signal,
-      color: "#666",
-    });
 
-    appState.inputFFT = new FourierController({
-      containerId: "input-fft",
-      frequencies: inputFFT.frequencies,
-      magnitudes: inputFFT.magnitudes,
-      title: "Input FFT",
-    });
-    appState.inputSpectogram = new SpectogramController({
-      containerId: "input-spectrogram",
-      title: "Input Spectrogram",
-      times: inputSpectrogram.x,
-      frequencies: inputSpectrogram.y,
-      magnitudes: inputSpectrogram.z,
-    });
+    if (!appState.inputViewer) {
+      appState.inputViewer = new SignalViewer({
+        containerId: "input-signal-viewer",
+        title: "Input Signal",
+        samples: input.amplitudes,
+        sampleRate: input.sampleRate,
+        audioSrc: inputPath,
+        color: "#666",
+      });
+    } else {
+      appState.inputViewer.updateSamples(
+        input.amplitudes,
+        input.sampleRate,
+        inputPath
+      );
+    }
 
+    if (!appState.inputFFT) {
+      appState.inputFFT = new FourierController({
+        containerId: "input-fft",
+        frequencies: inputFFT.frequencies,
+        magnitudes: inputFFT.magnitudes,
+        title: "Input FFT",
+      });
+    } else {
+      appState.inputFFT.updateData(inputFFT.frequencies, inputFFT.magnitudes);
+    }
+
+    if (!appState.inputSpectogram) {
+      appState.inputSpectogram = new SpectogramController({
+        containerId: "input-spectrogram",
+        title: "Input Spectrogram",
+        times: inputSpectrogram.x,
+        frequencies: inputSpectrogram.y,
+        magnitudes: inputSpectrogram.z,
+      });
+    } else {
+      appState.inputSpectogram.updateData(
+        inputSpectrogram.x,
+        inputSpectrogram.y,
+        inputSpectrogram.z
+      );
+    }
+
+    // After input is ready, load precomputed output for the same mode
     await this._loadPrecomputedOutput();
   }
 
@@ -259,7 +285,7 @@ export class EqualizerPanel {
       if (isAIMode) {
         // Call AI API with sliders
         const modeData = appState.renderedJson[appState.mode];
-        const sliders = modeData?.AI_Sliders || [];
+        const sliders = modeData?.AI_sliders || [];
 
         const result = await ApplyAi(
           appState.inputViewer.samples,
@@ -339,7 +365,7 @@ export class EqualizerPanel {
       this.useAI;
 
     // Determine which property to use
-    const sliderProperty = isAIMode ? "AI_Sliders" : "sliders";
+    const sliderProperty = isAIMode ? "AI_sliders" : "sliders";
     let sliders = modeData?.[sliderProperty] || [];
 
     return sliders;
@@ -398,7 +424,7 @@ export class EqualizerPanel {
         const isAIMode =
           (appState.mode === "musical" || appState.mode === "human_voices") &&
           this.useAI;
-        const sliderArray = isAIMode ? modeData?.AI_Sliders : modeData?.sliders;
+        const sliderArray = isAIMode ? modeData?.AI_sliders : modeData?.sliders;
 
         if (sliderArray) {
           sliderArray[i].value = val;
@@ -452,7 +478,7 @@ export class EqualizerPanel {
     if (this.applySuspense) this.applySuspense.style.display = "flex";
 
     try {
-      await this._loadPrecomputedOutput();
+      await this._updateViewersForMode();
       await this.renderSliders(); // renderSliders should now be async
     } catch (err) {
       console.error("Error setting mode:", err);
