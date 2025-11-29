@@ -172,7 +172,7 @@ def spectrogram(req: SpectrogramRequest):
         frames.append(np.abs(fft_vals))
         pos += hop_size
 
-    magnitude_frames = np.array(frames)  # shape: [time][freq]
+    magnitude_frames = np.array(frames)  # shape: [time][omega]
 
     # Axes
     num_frames = magnitude_frames.shape[0]

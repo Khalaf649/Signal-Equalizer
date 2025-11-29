@@ -45,7 +45,7 @@ export async function handleJsonUpload(event) {
 
       // === Populate appState ===
       appState.originalJson = jsonData;
-      appState.renderedJson = structuredClone(jsonData);
+      appState.renderedJson = structuredClone(jsonData); // deep copy for modifications
 
       appState.mode = "generic";
 

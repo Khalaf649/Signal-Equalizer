@@ -17,7 +17,7 @@ export class EqualizerPanel {
 
       // ===  DOM elements ===
       this.modeSelect = this.panel.querySelector("#modeSelect");
-      this.controlsContainer = this.panel.querySelector(".equalizer-controls");
+      this.controlsContainer = this.panel.querySelector(".equalizer-controls"); // placeholder for sliders
       this.resetBtn = this.panel.querySelector("#btnReset");
       this.saveBtn = this.panel.querySelector("#btnSave");
       this.addSliderBtn = this.panel.querySelector("#open-dialog");
