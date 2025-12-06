@@ -11,8 +11,10 @@ Visualize waveforms, FFTs, and spectrograms, tweak frequency bands with surgical
 
 ## Demo
 
-- **Quick demo video (placeholder):** [Watch the demo](VIDEO_LINK_PLACEHOLDER)
-- **Animated preview:** ![Demo GIF placeholder](docs/images/demo-placeholder.gif)
+<video width="640" height="360" controls>
+  <source src="./assets/demo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
 ---
 
@@ -285,4 +287,4 @@ Please open issues or pull requests and include a clear description and minimal 
 
 - **Author:** Abdelrahman Reda
   - Email: **abdlrhman.mohamed02@eng-st.cu.edu.eg**
-  - GitHub / Portfolio: [My GitHub](https://github.com/Khalaf649)
+  - GitHub : [My GitHub](https://github.com/Khalaf649)

@@ -21,10 +21,10 @@
       { "name": "bass_guitar", "low": 20, "high": 700, "value": 1.2 }
     ],
     "AI_sliders": [
-      { "name": "drums", "low": 6000, "high": 10000, "value": 0 },
+      { "name": "drums", "low": 6000, "high": 10000, "value": 0.8 },
       { "name": "vocals", "low": 700, "high": 2000, "value": 0 },
       { "name": "violin", "low": 2000, "high": 6000, "value": 0 },
-      { "name": "bass_guitar", "low": 20, "high": 700, "value": 1.2 }
+      { "name": "bass_guitar", "low": 20, "high": 700, "value": 0 }
     ],
     "output_signal": ""
   },
